@@ -525,3 +525,90 @@ func TestFrameClipsWhenTurned(t *testing.T) {
 		t.Errorf("turned: child gone inside the frame at %v", in)
 	}
 }
+
+// A page dense with long strokes must not push out what paints after it. Each
+// stroke's mask is its whole bounding box, and they share an atlas with the
+// window's icons and text.
+func TestDensePageLosesNothing(t *testing.T) {
+	d := doc.New()
+	index := ""
+	add := func(s *doc.Shape) {
+		s.Parent = "page:page"
+		index = doc.IndexBetween(index, "")
+		s.Index = index
+		d.Shapes[s.ID] = s
+	}
+	for i := range 1500 {
+		s := doc.NewShape(doc.NewID("shape"), doc.TypeDraw)
+		s.X, s.Y = float64(i%40)*20, float64(i%30)*10
+		pts := make([]doc.PointZ, 60)
+		for k := range pts {
+			pts[k] = doc.PointZ{X: float64(k) * 6, Y: float64(k) * 5, Z: .5}
+		}
+		s.Segments = []doc.Segment{{Type: "free", Points: pts, Dim: 2}}
+		s.IsComplete = true
+		add(s)
+	}
+	// The last thing the canvas paints: a solid red box, in a corner of the view.
+	last := doc.NewShape(doc.NewID("shape"), doc.TypeGeo)
+	last.X, last.Y, last.W, last.H = 1000, 500, 100, 100
+	last.Color, last.Fill, last.Dash = "red", "fill", "solid"
+	add(last)
+
+	a := New(d, &testHost{})
+	tt := ui.NewTester(a.View, 1280, 820)
+	tt.SetScale(2)
+	tt.Frame()
+	tt.Frame()
+	img := tt.Image()
+	p := a.Editor().ToScreen(geo.V(1050, 550))
+	r, g, b, _ := img.At(int(p.X*2), int(p.Y*2)).RGBA()
+	if !(r>>8 > 180 && g>>8 < 90 && b>>8 < 90) {
+		t.Errorf("the last shape didn't paint: pixel at %v is %d,%d,%d", p, r>>8, g>>8, b>>8)
+	}
+	// And the window's own icons still show: the select tool's button holds ink.
+	box, ok := tt.Find("Hand — H")
+	if !ok {
+		t.Fatal("no hand button")
+	}
+	bg := img.At(int(box.X+1)*2, int(box.Y+1)*2)
+	inked := false
+	for y := int(box.Y) * 2; y < int(box.Y+box.H)*2; y++ {
+		for x := int(box.X) * 2; x < int(box.X+box.W)*2; x++ {
+			if img.At(x, y) != bg {
+				inked = true
+			}
+		}
+	}
+	if !inked {
+		t.Error("the toolbar's icons are gone")
+	}
+}
+
+// Export tiles must meet without a seam, and hold everything a dense page has.
+func TestExportDensePageInTiles(t *testing.T) {
+	a, tt, _ := newTest(t)
+	e := a.Editor()
+	e.SetGeoTool("rectangle")
+	e.Next.Fill, e.Next.Color, e.Next.Dash = "fill", "blue", "solid"
+	// Across where tiles meet (512 DIPs apart at scale 2, from the box's corner).
+	drag(tt, 100, 100, 1100, 700)
+	data, ok := a.RenderPNG(2)
+	if !ok {
+		t.Fatal("no png")
+	}
+	img, err := png.Decode(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	// Inside the rectangle, every pixel is its color, seams included.
+	want := img.At(b.Dx()/2, b.Dy()/2)
+	for y := 120; y < b.Dy()-120; y++ {
+		for x := 120; x < b.Dx()-120; x++ {
+			if img.At(x, y) != want {
+				t.Fatalf("pixel %d,%d is %v inside a solid %v", x, y, img.At(x, y), want)
+			}
+		}
+	}
+}

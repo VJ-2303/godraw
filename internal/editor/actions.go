@@ -90,9 +90,19 @@ func (e *Editor) ZoomToBox(box geo.Box, maxZ float64) {
 func (e *Editor) ZoomToFit() {
 	if box, ok := e.ContentBounds(); ok {
 		e.ZoomToBox(box, 1)
-	} else {
-		e.ResetZoom()
+		return
 	}
+	e.ResetZoom()
+}
+
+// FitNewPage gives the current page its first view, once the viewport's size
+// is known: what it holds fits, so that a file opens showing its drawing, not
+// wherever the origin happens to be.
+func (e *Editor) FitNewPage() {
+	if _, seen := e.cams[e.Page]; seen {
+		return
+	}
+	e.ZoomToFit()
 }
 
 // ZoomToSelection fits the selection in the view.

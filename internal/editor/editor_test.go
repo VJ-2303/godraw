@@ -822,6 +822,28 @@ func TestCamera(t *testing.T) {
 	}
 }
 
+func TestNewPageViewFitsWhatItHolds(t *testing.T) {
+	h := newHarness(t)
+	h.rect(5000, 5000, 200, 100)
+	h.cams = map[doc.ID]Camera{} // as a file that just opened
+	h.FitNewPage()
+	if !h.ViewBox().ContainsBox(h.PageBounds(h.Children(h.Page)[0])) {
+		t.Errorf("view %+v doesn't show the drawing", h.ViewBox())
+	}
+	// Once seen, a page keeps the view the user left it at.
+	h.SetCam(Camera{Z: 2})
+	h.FitNewPage()
+	if h.Cam().Z != 2 {
+		t.Errorf("zoom %v", h.Cam().Z)
+	}
+	// An empty page starts at 100%, at the origin.
+	h.NewPage()
+	h.FitNewPage()
+	if h.Cam() != (Camera{Z: 1}) {
+		t.Errorf("empty page camera %+v", h.Cam())
+	}
+}
+
 // Gestures work under zoom: what is dragged follows the pointer.
 func TestTranslateUnderZoom(t *testing.T) {
 	h := newHarness(t)

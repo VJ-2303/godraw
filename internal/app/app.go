@@ -142,6 +142,7 @@ func (a *App) View(c *ui.Context) {
 	// The camera works in the size the canvas had last.
 	if b := a.canvasHandle.Bounds(c); b.W > 0 {
 		e.VW, e.VH = float64(b.W), float64(b.H)
+		e.FitNewPage()
 	}
 	a.decodeAssets()
 	e.ModsChanged(modsOf(c.Modifiers()))

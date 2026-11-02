@@ -2,6 +2,8 @@ package app
 
 import (
 	"bytes"
+	"image"
+	"image/draw"
 	"image/png"
 	"math"
 	"os"
@@ -11,6 +13,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"godraw/internal/editor"
+	"godraw/internal/geo"
 )
 
 // RenderPNG draws what export draws (the selection, else the page) at a
@@ -27,30 +30,42 @@ func (a *App) RenderPNG(scale float64) ([]byte, bool) {
 	if k := maxSide / (math.Max(box.W, box.H) * scale); k < 1 {
 		scale *= k
 	}
-	w, h := int(math.Ceil(box.W)), int(math.Ceil(box.H))
 	pal := e.Palette()
-	img := ui.Render(func(c *ui.Context) {
-		ui.Box(c).Fill().Draw(func(p *ui.Painter, r ui.Rect) {
-			s := &scene{a: a, e: e, p: p, pal: pal, export: true}
-			s.cam = editor.Camera{X: -box.X, Y: -box.Y, Z: 1}
-			s.view = box
-			p.Fill(r, toUI(pal.Background), 0)
-			for _, id := range ids {
-				sh := e.Doc.Shapes[id]
-				switch sh.Type {
-				case "group":
-					s.layer(id, true)
-					s.layer(id, false)
-				case "frame":
-					s.frame(sh)
-				default:
-					s.shape(sh)
-				}
-			}
-		})
-	}, w, h, float32(scale))
+	// In tiles, each a frame with a mask atlas of its own: a whole page of
+	// strokes wouldn't fit one. Tiles are whole device pixels apart, so that
+	// nothing shows where they meet.
+	const tile = 1024
+	w, h := int(math.Ceil(box.W*scale)), int(math.Ceil(box.H*scale))
+	out := image.NewRGBA(image.Rect(0, 0, w, h))
+	side := int(math.Ceil(tile / scale))
+	for ty := 0; ty < h; ty += tile {
+		for tx := 0; tx < w; tx += tile {
+			at := geo.V(box.X+float64(tx)/scale, box.Y+float64(ty)/scale)
+			img := ui.Render(func(c *ui.Context) {
+				ui.Box(c).Fill().Draw(func(p *ui.Painter, r ui.Rect) {
+					s := &scene{a: a, e: e, p: p, pal: pal, export: true}
+					s.cam = editor.Camera{X: -at.X, Y: -at.Y, Z: 1}
+					s.view = geo.Box{X: at.X, Y: at.Y, W: float64(side), H: float64(side)}
+					p.Fill(r, toUI(pal.Background), 0)
+					for _, id := range ids {
+						sh := e.Doc.Shapes[id]
+						switch sh.Type {
+						case "group":
+							s.layer(id, true)
+							s.layer(id, false)
+						case "frame":
+							s.frame(sh)
+						default:
+							s.shape(sh)
+						}
+					}
+				})
+			}, side, side, float32(scale))
+			draw.Draw(out, image.Rect(tx, ty, tx+tile, ty+tile), img, image.Point{}, draw.Src)
+		}
+	}
 	var buf bytes.Buffer
-	if err := png.Encode(&buf, img); err != nil {
+	if err := png.Encode(&buf, out); err != nil {
 		return nil, false
 	}
 	return buf.Bytes(), true

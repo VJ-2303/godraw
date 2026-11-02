@@ -30,6 +30,10 @@ type Prim struct {
 	Dash  []float64
 	Butt  bool // flat ends and pointed corners rather than round ones
 
+	// Ink, on a hand-drawn stroke's fill, is the line the fill outlines: what
+	// a view with very many strokes draws in its place.
+	Ink *Ink
+
 	// Text.
 	Block *TextBlock
 	X, Y  float64
@@ -43,6 +47,12 @@ type Prim struct {
 	FlipX bool
 	FlipY bool
 	Crop  *doc.Crop
+}
+
+// Ink is a line through points, with its width at each.
+type Ink struct {
+	Pts []geo.Vec
+	W   []float64
 }
 
 // Display returns what a shape draws, in its own space. Arrows follow what
@@ -134,7 +144,11 @@ func resample(pts []geo.Vec, step float64) []geo.Vec {
 
 // ribbon returns the filled outline of a line through pts, widths wide,
 // with round ends.
-func ribbon(pts []geo.Vec, widths []float64) *geo.Path {
+func ribbon(pts []geo.Vec, widths []float64) Prim {
+	return Prim{Kind: PrimFill, Path: ribbonPath(pts, widths), Ink: &Ink{pts, widths}}
+}
+
+func ribbonPath(pts []geo.Vec, widths []float64) *geo.Path {
 	n := len(pts)
 	p := &geo.Path{}
 	if n == 0 {
@@ -188,7 +202,7 @@ func capPoints(c, from, back geo.Vec) []geo.Vec {
 // inkLine returns a hand-drawn stroke along pts: its center wanders a
 // little and its width breathes. Closed lines overlap where they meet, as a
 // pen coming round does.
-func inkLine(pts []geo.Vec, closed bool, width float64, seed string) *geo.Path {
+func inkLine(pts []geo.Vec, closed bool, width float64, seed string) Prim {
 	r := geo.NewRng(seed)
 	wander, breathe := newNoise(r), newNoise(r)
 	if closed && len(pts) > 2 {
@@ -259,7 +273,9 @@ func outlinePrims(dash string, base *geo.Path, pts []geo.Vec, closed bool, w flo
 	case "none":
 		return nil
 	case "draw":
-		return []Prim{fillWith(inkLine(pts, closed, w, seed), c)}
+		p := inkLine(pts, closed, w, seed)
+		p.Color = c
+		return []Prim{p}
 	case "dashed", "dotted":
 		p := strokeWith(base, w, c)
 		p.Dash = dashOf(dash, w)
@@ -410,10 +426,10 @@ func smoothStroke(pts []geo.Vec, amount float64) []geo.Vec {
 // freehandPath returns the filled outline of a pen stroke through pts: as
 // wide as size where the pen goes slowly or presses, thinner where it goes
 // fast.
-func freehandPath(s *doc.Shape, pts []geo.Vec, pressure []float64, size float64) *geo.Path {
+func freehandPath(s *doc.Shape, pts []geo.Vec, pressure []float64, size float64) Prim {
 	if len(pts) == 1 {
 		r := size / 2
-		return geo.EllipsePath(geo.Box{X: pts[0].X - r, Y: pts[0].Y - r, W: 2 * r, H: 2 * r})
+		return Prim{Kind: PrimFill, Path: geo.EllipsePath(geo.Box{X: pts[0].X - r, Y: pts[0].Y - r, W: 2 * r, H: 2 * r})}
 	}
 	sm := smoothStroke(pts, 0.45)
 	// Points too close together turn the outline into noise.
@@ -475,8 +491,9 @@ func (e *Editor) drawPrims(s *doc.Shape, pal *Palette) []Prim {
 	}
 	if s.Dash == "draw" {
 		size := 1 + stroke*1.5
-		out = append(out, fillWith(freehandPath(s, pts, pressure, size), sw.Solid))
-		return out
+		ink := freehandPath(s, pts, pressure, size)
+		ink.Color = sw.Solid
+		return append(out, ink)
 	}
 	if len(pts) == 1 {
 		r := stroke

@@ -16,6 +16,16 @@ go tool mygo build          # package build/<platform>/godraw.app and a .dmg
 go test ./...
 ```
 
+## Try the showcase
+
+```sh
+go run . examples/showcase.tldr
+```
+
+Three pages: a poster with a live diagram (drag a box and its arrows follow), a generative
+flow field of 1,700 pen strokes, and a sheet of every style. `go run ./examples/showcase`
+regenerates it.
+
 ## What it does
 
 **Tools.** Select, hand, draw, eraser, arrow, text, note, image, line, highlighter, laser,

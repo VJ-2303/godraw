@@ -22,9 +22,13 @@ type scene struct {
 	origin geo.Vec
 	view   geo.Box // what the camera shows, in the page
 	export bool
-	only   []doc.ID // what an export draws; all of the page without it
-	path   ui.Path
-	transp bool
+	// lightInk draws hand-inked strokes as lines rather than filled masks:
+	// see atlasBudget.
+	lightInk bool
+	only     []doc.ID // what an export draws; all of the page without it
+	path     ui.Path
+	segment  [2][2]float32
+	transp   bool
 }
 
 func toUI(c editor.Color) ui.Color {
@@ -73,8 +77,37 @@ func (a *App) paintCanvas(p *ui.Painter, r ui.Rect) {
 	if e.Grid {
 		s.grid(r)
 	}
+	s.lightInk = s.maskArea(e.Page) > atlasBudget
 	s.children(e.Page)
 	s.overlays()
+}
+
+// atlasBudget is how many device pixels of masks a frame may ask for. Paths
+// rasterize to a mask of their bounding box, in a 4096² atlas that also holds
+// the window's icons and text, and a frame that overflows it loses whatever
+// paints last. A long diagonal stroke costs its whole box however thin it is,
+// so a page dense with strokes gets there quickly; past this budget strokes
+// draw as lines, which take no room in it.
+const atlasBudget = 6_000_000
+
+// maskArea estimates the device pixels of masks the shapes in view ask for.
+func (s *scene) maskArea(parent doc.ID) float64 {
+	k := s.cam.Z * float64(s.p.Scale())
+	var area float64
+	for _, id := range s.e.Children(parent) {
+		sh := s.e.Doc.Shapes[id]
+		if sh.Type == doc.TypeGroup || sh.Type == doc.TypeFrame {
+			area += s.maskArea(id)
+			if sh.Type == doc.TypeGroup {
+				continue
+			}
+		}
+		b := s.e.PageBounds(id)
+		if s.view.Overlaps(b) {
+			area += (b.W*k + 8) * (b.H*k + 8)
+		}
+	}
+	return area
 }
 
 // grid draws dots at the grid's steps, sparser as the view zooms out.
@@ -180,6 +213,11 @@ func (s *scene) shape(sh *doc.Shape) {
 func (s *scene) prim(pr editor.Prim, m geo.Mat, o float64, sh *doc.Shape) {
 	switch pr.Kind {
 	case editor.PrimFill:
+		// Translucent, overlapping pieces of line would show: those stay whole.
+		if s.lightInk && pr.Ink != nil && pr.Color.A*o >= 1 {
+			s.inkLine(pr, m)
+			return
+		}
 		s.p.FillPath(s.buildPath(pr.Path, m), toUI(pr.Color.Alpha(o)))
 	case editor.PrimStroke:
 		path := s.buildPath(pr.Path, m)
@@ -199,6 +237,30 @@ func (s *scene) prim(pr editor.Prim, m geo.Mat, o float64, sh *doc.Shape) {
 		s.text(pr, m, o)
 	case editor.PrimImage:
 		s.image(pr, m, o)
+	}
+}
+
+// inkLine draws a hand-inked stroke as a run of short lines, as wide as it is
+// at each point, a few pixels each: as much as the eye can tell.
+func (s *scene) inkLine(pr editor.Prim, m geo.Mat) {
+	const step = 3 // DIPs
+	c := toUI(pr.Color)
+	z := s.cam.Z
+	pts := pr.Ink.Pts
+	if len(pts) == 0 {
+		return
+	}
+	last := m.Apply(pts[0])
+	seg := s.segment[:]
+	for i := 1; i < len(pts); i++ {
+		q := m.Apply(pts[i])
+		if i < len(pts)-1 && q.Dist(last) < step {
+			continue
+		}
+		seg[0] = [2]float32{float32(last.X), float32(last.Y)}
+		seg[1] = [2]float32{float32(q.X), float32(q.Y)}
+		s.p.StrokePolyline(seg, max(float32(pr.Ink.W[i]*z), 0.6), c)
+		last = q
 	}
 }
 
