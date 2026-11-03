@@ -29,9 +29,9 @@ esac
 # -- Pick a downloader and the platform. --------------------------------------
 
 if command -v curl >/dev/null 2>&1; then
-  fetch() { curl -fsSL -o "$2" "$1"; }
+  fetch() { curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors -o "$2" "$1"; }
 elif command -v wget >/dev/null 2>&1; then
-  fetch() { wget -qO "$2" "$1"; }
+  fetch() { wget -q --tries=5 --waitretry=2 -O "$2" "$1"; }
 else
   echo "error: need curl or wget" >&2
   exit 1
