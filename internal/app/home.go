@@ -302,8 +302,7 @@ func formatRelativeTime(t time.Time) string {
 // homeShortcuts processes keyboard events on the Home screen.
 func (a *App) homeShortcuts(c *ui.Context) {
 	if c.Shortcut(ui.Cmd, ui.KeyN) {
-		a.newName = a.nextDefaultName()
-		a.newModal = true
+		a.CreateAndOpen("")
 	}
 }
 
@@ -314,57 +313,49 @@ func (a *App) homeView(c *ui.Context) {
 	isSearching := strings.TrimSpace(a.searchQuery) != ""
 
 	ui.Column(c.Key("home-root")).Fill().Background(t.Background).Children(func() {
-		// Top Floating Navigation Bar
-		ui.Row(c.Key("home-top-bar")).FillWidth().Padding(14, 24, 10, 24).AlignItems(ui.Center).Children(func() {
-			// Brand pill: [pencil] godraw | N drawings
-			panelStyle(c, ui.Row(c.Key("home-brand"))).Height(38).Padding(0, 12).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Icon(c, icon("pencil")).Size(17, 17).TextColor(t.Accent)
-				ui.Text(c, "godraw").FontSize(14).Bold()
-				ui.Box(c).Size(1, 18).Margin(0, 2).Background(t.Border.Alpha(0.6))
-				countText := fmt.Sprintf("%d drawings", len(a.drawings))
-				if len(a.drawings) == 1 {
-					countText = "1 drawing"
+		// Top Bar
+		ui.Row(c.Key("home-header")).FillWidth().Height(56).Padding(0, 32, 0, 32).AlignItems(ui.Center).Children(func() {
+			ui.Row(c.Key("title-row")).Gap(8).AlignItems(ui.Baseline).Children(func() {
+				ui.Text(c, "Drawings").FontSize(18).Bold()
+				if len(a.drawings) > 0 {
+					ui.Text(c, fmt.Sprintf("%d", len(a.drawings))).FontSize(13).TextColor(t.TextMuted)
 				}
-				ui.Text(c, countText).FontSize(12).TextColor(t.TextMuted)
 			})
 
 			ui.Box(c).Grow(1)
 
-			// Search pill + actions
-			ui.Row(c.Key("home-top-right")).Gap(10).AlignItems(ui.Center).Children(func() {
-				panelStyle(c, ui.Row(c.Key("search-pill"))).Height(38).Width(240).Padding(0, 10).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.Row(c.Key("header-actions")).Gap(10).AlignItems(ui.Center).Children(func() {
+				ui.Row(c.Key("search-box")).Width(220).Height(34).Radius(6).
+					Background(t.Surface.Alpha(0.4)).Border(1, t.Border.Alpha(0.7)).Padding(0, 8).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Icon(c, icon("search")).Size(14, 14).TextColor(t.TextMuted)
-					ui.TextInput(c.Key("search-input"), &a.searchQuery).Grow(1).Placeholder("Search drawings…")
+					ui.TextInput(c.Key("search-input"), &a.searchQuery).Grow(1).Placeholder("Search…")
 				})
 
-				panelStyle(c, ui.Row(c.Key("home-actions"))).Height(38).Padding(3).Gap(4).AlignItems(ui.Center).Children(func() {
-					themeIcon := "moon"
-					if t.Dark {
-						themeIcon = "sun"
-					}
-					iconButton(c, "theme-toggle", themeIcon, "Toggle theme", false).OnClick(func() {
-						a.ToggleDark()
-					})
-					newBtn := ui.ButtonBase(c.Key("new-drawing-btn")).Height(32).Padding(0, 12).Radius(7).
-						Background(t.Accent).TextColor(t.AccentText).Center().Gap(6)
-					newBtn.Children(func() {
-						ui.Icon(c, icon("plus")).Size(15, 15)
-						ui.Text(c, "New").FontSize(13).Bold()
-					})
-					newBtn.OnClick(func() {
-						a.newName = a.nextDefaultName()
-						a.newModal = true
-					})
+				themeIcon := "moon"
+				if t.Dark {
+					themeIcon = "sun"
+				}
+				iconButton(c, "theme-toggle", themeIcon, "Toggle theme", false).OnClick(func() {
+					a.ToggleDark()
+				})
+
+				newBtn := ui.ButtonBase(c.Key("new-drawing-btn")).Height(34).Padding(0, 14).Radius(6).
+					Background(t.Accent).TextColor(t.AccentText).Center().Gap(6)
+				newBtn.Children(func() {
+					ui.Icon(c, icon("plus")).Size(14, 14)
+					ui.Text(c, "New drawing").FontSize(13).Bold()
+				})
+				newBtn.OnClick(func() {
+					a.CreateAndOpen("")
 				})
 			})
 		})
 
-		// Main Content Area
-		ui.Column(c.Key("home-content")).FillWidth().Grow(1).Padding(10, 24, 24, 24).Children(func() {
+		// Gallery Grid Area
+		ui.Column(c.Key("home-content")).FillWidth().Grow(1).Padding(8, 32, 32, 32).Children(func() {
 			if isSearching && len(items) == 0 {
-				ui.Column(c.Key("empty-search")).Fill().Center().Gap(10).Children(func() {
-					ui.Icon(c, icon("search")).Size(32, 32).TextColor(t.TextMuted.Alpha(0.35))
-					ui.Text(c, fmt.Sprintf("No drawings match %q", a.searchQuery)).FontSize(14).TextColor(t.TextMuted)
+				ui.Column(c.Key("empty-search")).Fill().Center().Gap(6).Children(func() {
+					ui.Text(c, "No drawings found").FontSize(14).TextColor(t.TextMuted)
 				})
 				return
 			}
@@ -374,7 +365,7 @@ func (a *App) homeView(c *ui.Context) {
 				total = 1 + len(items)
 			}
 
-			ui.GridView(c, &a.gridState, total, 260, 210, func(i int) {
+			ui.GridView(c, &a.gridState, total, 250, 195, func(i int) {
 				if !isSearching && i == 0 {
 					a.renderNewCard(c, t)
 					return
@@ -389,73 +380,52 @@ func (a *App) homeView(c *ui.Context) {
 	})
 
 	// Modals
-	a.newDrawingModal(c)
 	a.renameDrawingModal(c)
 	a.deleteDrawingModal(c)
 }
 
 func (a *App) renderNewCard(c *ui.Context, t *ui.Theme) {
-	shadow := ui.RGBA(0, 0, 0, 0.08)
-	if t.Dark {
-		shadow = ui.RGBA(0, 0, 0, 0.4)
-	}
-	card := ui.Column(c.Key("create-new-card")).Size(260, 210).Radius(10).
-		Background(t.Background).Border(1, t.Border.Alpha(0.6)).Center().Gap(10).Clip()
+	card := ui.Column(c.Key("create-new-card")).Size(250, 195).Radius(8).
+		Background(t.Surface.Alpha(0.15)).Border(1, t.Border.Alpha(0.6)).Center().Gap(10).Clip()
 	if card.Hovered() {
-		card.Border(1, t.Accent).Shadow(0, 4, 16, 0, shadow).Background(t.SurfaceHover)
-	} else {
-		card.Shadow(0, 2, 8, 0, shadow)
+		card.Border(1, t.Accent).Background(t.Surface.Alpha(0.35))
 	}
 	card.Children(func() {
-		ui.Box(c).Size(44, 44).Radius(22).Background(t.Accent.Alpha(0.12)).Center().Children(func() {
-			ui.Icon(c, icon("plus")).Size(20, 20).TextColor(t.Accent)
-		})
-		ui.Column(c).Gap(2).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, "New Drawing").FontSize(13).Bold()
-			ui.Text(c, "Blank canvas").FontSize(11).TextColor(t.TextMuted)
-		})
+		ui.Icon(c, icon("plus")).Size(24, 24).TextColor(t.TextMuted)
+		ui.Text(c, "New drawing").FontSize(13).Bold()
 	})
 	card.OnClick(func() {
-		a.newName = a.nextDefaultName()
-		a.newModal = true
+		a.CreateAndOpen("")
 	})
 }
 
 func (a *App) renderDrawingCard(c *ui.Context, t *ui.Theme, item *DrawingItem) {
-	shadow := ui.RGBA(0, 0, 0, 0.08)
-	if t.Dark {
-		shadow = ui.RGBA(0, 0, 0, 0.4)
-	}
-	card := ui.Column(c.Key(item.Path)).Size(260, 210).Radius(10).
-		Background(t.Background).Border(1, t.Border.Alpha(0.6)).Clip()
+	card := ui.Column(c.Key(item.Path)).Size(250, 195).Radius(8).
+		Background(t.Surface.Alpha(0.2)).Border(1, t.Border.Alpha(0.6)).Padding(8).Gap(8).Clip()
 	if card.Hovered() {
-		card.Border(1, t.Accent).Shadow(0, 4, 16, 0, shadow)
-	} else {
-		card.Shadow(0, 2, 8, 0, shadow)
+		card.Border(1, t.Accent).Background(t.Surface.Alpha(0.4))
 	}
 
 	card.Children(func() {
-		// Thumbnail area
-		thumb := ui.Box(c.Key("thumb")).Width(260).Height(145).Background(t.Surface.Alpha(0.3)).Center().Clip()
+		// Framed thumbnail sheet
+		thumb := ui.Box(c.Key("thumb")).Width(234).Height(132).Radius(6).
+			Background(t.Background).Border(1, t.Border.Alpha(0.4)).Center().Clip()
 		if item.Thumbnail != nil {
 			thumb.Children(func() {
-				ui.Image(c, item.Thumbnail).Fit(ui.Contain).Size(244, 130)
+				ui.Image(c, item.Thumbnail).Fit(ui.Contain).Size(222, 120)
 			})
 		} else {
 			thumb.Children(func() {
-				ui.Icon(c, icon("frame")).Size(24, 24).TextColor(t.TextMuted.Alpha(0.25))
+				ui.Icon(c, icon("frame")).Size(20, 20).TextColor(t.TextMuted.Alpha(0.2))
 			})
 		}
 		thumb.OnClick(func() {
 			a.OpenDrawing(item.Path)
 		})
 
-		// Subtle hairline divider
-		ui.Box(c).Height(1).FillWidth().Background(t.Border.Alpha(0.4))
-
-		// Footer meta & actions
-		ui.Row(c.Key("info")).FillWidth().Height(64).Padding(0, 12, 0, 8).AlignItems(ui.Center).Children(func() {
-			metaCol := ui.Column(c.Key("meta")).Grow(1).Gap(3).Justify(ui.Center)
+		// Title and timestamp info row
+		ui.Row(c.Key("info")).Width(234).Height(36).AlignItems(ui.Center).Children(func() {
+			metaCol := ui.Column(c.Key("meta")).Grow(1).Gap(2).Justify(ui.Center)
 			metaCol.Children(func() {
 				ui.Text(c, item.Name).FontSize(13).Bold().SingleLine()
 				ui.Text(c, formatRelativeTime(item.ModTime)).FontSize(11).TextColor(t.TextMuted).SingleLine()
@@ -474,24 +444,6 @@ func (a *App) renderDrawingCard(c *ui.Context, t *ui.Theme, item *DrawingItem) {
 				if m.Item("Delete").Chosen() {
 					a.deleteTarget = item
 					a.deleteModal = true
-				}
-			})
-		})
-	})
-}
-
-func (a *App) newDrawingModal(c *ui.Context) {
-	ui.Modal(c, &a.newModal, func() {
-		ui.Column(c).Width(340).Gap(14).Children(func() {
-			ui.Text(c, "New Drawing").FontSize(16).Bold()
-			in := ui.TextInput(c.Key("new-name-input"), &a.newName).AutoFocus().Label("Name")
-			ui.Row(c).Justify(ui.End).Gap(8).Children(func() {
-				if ui.Button(c, "Cancel").Clicked() {
-					a.newModal = false
-				}
-				if ui.PrimaryButton(c, "Create").Clicked() || in.Submitted() {
-					a.CreateAndOpen(a.newName)
-					a.newModal = false
 				}
 			})
 		})
