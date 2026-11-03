@@ -60,6 +60,13 @@ func (a *App) shortcuts(c *ui.Context) {
 	if c.Shortcut(cmd, ui.KeyS) {
 		a.SaveCurrent()
 	}
+	if c.Shortcut(cmd, ui.KeyO) {
+		a.OpenGallery()
+	}
+	if c.Shortcut(cmd, ui.KeyN) {
+		a.SaveCurrent()
+		a.CreateAndOpen("")
+	}
 
 	// Editing.
 	if c.Shortcut(cmd, ui.KeyZ) {

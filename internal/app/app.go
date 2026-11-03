@@ -36,9 +36,9 @@ type Host interface {
 
 // App is one window's state.
 type App struct {
-	mode Mode
-	win  *mygo.Window
-	dir  string
+	galleryOpen  bool
+	win          *mygo.Window
+	dir          string
 
 	drawings     []*DrawingItem
 	searchQuery  string
@@ -85,7 +85,6 @@ type App struct {
 func New(d *doc.Drawing, host Host) *App {
 	m := newMeasurer()
 	a := &App{
-		mode: ModeCanvas,
 		meas: m, host: host, t0: time.Now(),
 		bitmaps: map[doc.ID]*ui.Bitmap{}, decoded: map[doc.ID]string{}, pending: map[doc.ID]bool{},
 		minimap: false, sizeBadge: true,
@@ -176,12 +175,10 @@ func (a *App) View(c *ui.Context) {
 	a.hasSvc = true
 	a.applyTheme(c)
 
-	if a.mode == ModeHome {
-		a.homeShortcuts(c)
-		a.homeView(c)
-		return
-	}
 	a.canvasView(c)
+	a.galleryDialog(c)
+	a.renameDrawingModal(c)
+	a.deleteDrawingModal(c)
 }
 
 func (a *App) canvasView(c *ui.Context) {

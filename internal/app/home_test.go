@@ -17,17 +17,14 @@ func TestHomeGalleryFlow(t *testing.T) {
 	a.dir = tempDir
 	a.loadDrawings()
 
-	if a.mode != ModeHome {
-		t.Fatalf("expected ModeHome, got %v", a.mode)
-	}
-	if len(a.drawings) != 0 {
-		t.Fatalf("expected 0 drawings, got %d", len(a.drawings))
+	if !a.galleryOpen {
+		t.Fatalf("expected galleryOpen = true on launch")
 	}
 
 	// Create and open new drawing
 	a.CreateAndOpen("Diagram Alpha")
-	if a.mode != ModeCanvas {
-		t.Fatalf("expected ModeCanvas after creation, got %v", a.mode)
+	if a.galleryOpen {
+		t.Fatalf("expected galleryOpen = false after creation")
 	}
 	if a.currentName != "Diagram Alpha" {
 		t.Errorf("currentName = %q, want 'Diagram Alpha'", a.currentName)
@@ -43,10 +40,10 @@ func TestHomeGalleryFlow(t *testing.T) {
 		t.Fatalf("file not saved to %q", a.currentPath)
 	}
 
-	// Go back home
-	a.GoHome()
-	if a.mode != ModeHome {
-		t.Fatalf("expected ModeHome, got %v", a.mode)
+	// Open gallery overlay
+	a.OpenGallery()
+	if !a.galleryOpen {
+		t.Fatalf("expected galleryOpen = true after OpenGallery")
 	}
 	if len(a.drawings) != 1 {
 		t.Fatalf("expected 1 drawing, got %d", len(a.drawings))
@@ -67,7 +64,7 @@ func TestHomeGalleryFlow(t *testing.T) {
 		t.Errorf("Diagram Beta.tldr does not exist")
 	}
 
-	// Render home view with ui.Tester
+	// Render view with ui.Tester
 	tt := ui.NewTester(a.View, 1280, 820)
 	tt.Frame()
 

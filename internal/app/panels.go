@@ -404,14 +404,22 @@ func (a *App) topLeft(c *ui.Context) {
 	e := a.ed
 	t := c.Theme()
 	panelStyle(c, ui.Row(c.Key("topleft"))).Absolute().Top(12).Left(12).Padding(4).Gap(3).AlignItems(ui.Center).Children(func() {
-		homeBtn := iconButton(c, "home-btn", "arrow-left", "Home", false)
-		homeBtn.OnClick(func() {
-			a.SaveCurrent()
-			a.GoHome()
-		})
-		if a.currentName != "" {
-			ui.Text(c, a.currentName).FontSize(13).Bold().Margin(0, 4)
+		docBtn := ui.ButtonBase(c.Key("gallery-btn")).Height(34).Padding(0, 10).Radius(7).Gap(6).AlignItems(ui.Center).Label("Drawings").Tooltip("Drawings — Ctrl+O")
+		if docBtn.Hovered() {
+			docBtn.Background(t.SurfaceHover)
 		}
+		docBtn.Children(func() {
+			ui.Icon(c, icon("menu")).Size(16, 16)
+			name := a.currentName
+			if name == "" {
+				name = "Drawings"
+			}
+			ui.Text(c, name).FontSize(13).Bold().SingleLine().MaxWidth(140)
+			ui.Icon(c, icon("chevron-down")).Size(12, 12).TextColor(t.TextMuted)
+		})
+		docBtn.OnClick(func() {
+			a.OpenGallery()
+		})
 		ui.Box(c).Size(1, 22).Margin(0, 2).Background(t.Border.Alpha(0.6))
 
 		page := e.Doc.Page(e.Page)
