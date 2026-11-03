@@ -87,6 +87,7 @@ func New(d *doc.Drawing, host Host) *App {
 		meas: m, host: host, t0: time.Now(),
 		bitmaps: map[doc.ID]*ui.Bitmap{}, decoded: map[doc.ID]string{}, pending: map[doc.ID]bool{},
 		minimap: false, sizeBadge: true,
+		theme: "light",
 	}
 	a.ed = editor.New(d, m.measure)
 	a.ed.OnChange = func(doc *doc.Drawing) {
@@ -211,14 +212,10 @@ func (a *App) canvasView(c *ui.Context) {
 func (a *App) applyTheme(c *ui.Context) {
 	var t *ui.Theme
 	switch a.theme {
-	case "light":
-		t = ui.LightTheme()
 	case "dark":
 		t = ui.DarkTheme()
 	default:
-		// As the system has it.
-		a.ed.DarkMode = c.Theme().Dark
-		return
+		t = ui.LightTheme()
 	}
 	c.SetTheme(t)
 	a.ed.DarkMode = t.Dark

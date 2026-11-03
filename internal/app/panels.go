@@ -487,10 +487,7 @@ func (a *App) moreMenu(m *ui.Menu) {
 		e.FocusMode = !e.FocusMode
 	}
 	m.Submenu("Theme", func(m *ui.Menu) {
-		if m.Item("System").Radio(a.theme == "").Chosen() {
-			a.theme = ""
-		}
-		if m.Item("Light").Radio(a.theme == "light").Chosen() {
+		if m.Item("Light").Radio(a.theme != "dark").Chosen() {
 			a.theme = "light"
 		}
 		if m.Item("Dark").Radio(a.theme == "dark").Chosen() {

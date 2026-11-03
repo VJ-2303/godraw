@@ -208,11 +208,16 @@ func (a *App) ToggleDark() {
 	}
 }
 
-// SetTheme sets the theme: "light", "dark", or "" as the system has it.
+// SetTheme sets the theme: "light" or "dark".
 func (a *App) SetTheme(t string) { a.theme = t }
 
 // ThemeName returns the theme setting.
-func (a *App) ThemeName() string { return a.theme }
+func (a *App) ThemeName() string {
+	if a.theme == "" {
+		return "light"
+	}
+	return a.theme
+}
 
 // contextMenu builds the canvas's right-click menu.
 func (a *App) contextMenu(m *ui.Menu) {

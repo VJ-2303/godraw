@@ -612,3 +612,29 @@ func TestExportDensePageInTiles(t *testing.T) {
 		}
 	}
 }
+
+func TestThemeDefaultAndExplicitToggle(t *testing.T) {
+	a, tt, _ := newTest(t)
+	if a.ThemeName() != "light" {
+		t.Fatalf("default theme %q, want light", a.ThemeName())
+	}
+	if a.Editor().DarkMode {
+		t.Fatal("editor default DarkMode is true, want false")
+	}
+	a.ToggleDark()
+	tt.Frame()
+	if a.ThemeName() != "dark" {
+		t.Fatalf("toggled theme %q, want dark", a.ThemeName())
+	}
+	if !a.Editor().DarkMode {
+		t.Fatal("editor DarkMode is false after toggle, want true")
+	}
+	a.ToggleDark()
+	tt.Frame()
+	if a.ThemeName() != "light" {
+		t.Fatalf("toggled back theme %q, want light", a.ThemeName())
+	}
+	if a.Editor().DarkMode {
+		t.Fatal("editor DarkMode is true after second toggle, want false")
+	}
+}

@@ -18,6 +18,8 @@ A local, native whiteboard in the manner of [tldraw](https://github.com/tldraw/t
 - Centralize drawings in ~/Documents/godraw with native home gallery screen and remove canvas file-handling menus
 - Use centered dialog overlay for drawings gallery instead of full-screen page
 - Cache shape pageBounds and precompute viewport culling boxes per frame
+- Default to light theme instead of OS dark theme; dark theme only when explicitly set [internal/app/app.go:211]
+- Apply Option B warm paper light theme: #f8f7f4 canvas, #212124 warm ink text, 10% alpha grid dots, warm panel shadow [internal/editor/theme.go:76]
 
 ## Notes
 - init
