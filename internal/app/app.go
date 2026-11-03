@@ -42,7 +42,6 @@ type App struct {
 
 	drawings     []*DrawingItem
 	searchQuery  string
-	gridState    ui.GridState
 	renameModal  bool
 	renameTarget *DrawingItem
 	renameName   string

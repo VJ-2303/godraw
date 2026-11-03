@@ -71,52 +71,6 @@ func (a *App) RenderPNG(scale float64) ([]byte, bool) {
 	return buf.Bytes(), true
 }
 
-// RenderThumbnail draws the whole drawing scaled to fit in thumbW×thumbH.
-func (a *App) RenderThumbnail(thumbW, thumbH int) ([]byte, bool) {
-	e := a.ed
-	box, ids, ok := e.ExportBounds()
-	if !ok || len(ids) == 0 {
-		return nil, false
-	}
-	box = box.Expand(32)
-	scale := math.Min(float64(thumbW)/box.W, float64(thumbH)/box.H)
-	if scale > 1 {
-		scale = 1
-	}
-	pal := e.Palette()
-	w, h := int(math.Ceil(box.W*scale)), int(math.Ceil(box.H*scale))
-	if w <= 0 || h <= 0 {
-		return nil, false
-	}
-	out := image.NewRGBA(image.Rect(0, 0, w, h))
-	img := ui.Render(func(c *ui.Context) {
-		ui.Box(c).Fill().Draw(func(p *ui.Painter, r ui.Rect) {
-			s := &scene{a: a, e: e, p: p, pal: pal, export: true}
-			s.cam = editor.Camera{X: -box.X, Y: -box.Y, Z: scale}
-			s.view = box
-			p.Fill(r, toUI(pal.Background), 0)
-			for _, id := range ids {
-				sh := e.Doc.Shapes[id]
-				switch sh.Type {
-				case "group":
-					s.layer(id, true)
-					s.layer(id, false)
-				case "frame":
-					s.frame(sh)
-				default:
-					s.shape(sh)
-				}
-			}
-		})
-	}, w, h, 1)
-	draw.Draw(out, image.Rect(0, 0, w, h), img, image.Point{}, draw.Src)
-	var buf bytes.Buffer
-	if err := png.Encode(&buf, out); err != nil {
-		return nil, false
-	}
-	return buf.Bytes(), true
-}
-
 func (a *App) exportName(ext string) string {
 	name := a.ed.Doc.Name
 	if name == "" {
