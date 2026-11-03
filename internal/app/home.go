@@ -358,22 +358,25 @@ func (a *App) galleryDialog(c *ui.Context) {
 					}
 
 					row.Children(func() {
-						iconColor := t.TextMuted
-						if isActive {
-							iconColor = t.Accent
-						}
-						ui.Icon(c, icon("pencil")).Size(16, 16).TextColor(iconColor)
-
-						col := ui.Column(c.Key("meta")).Grow(1).Gap(2).Justify(ui.Center)
-						col.Children(func() {
-							title := ui.Text(c, it.Name).FontSize(13).SingleLine()
+						itemArea := ui.Row(c.Key("item-area")).Grow(1).Gap(10).AlignItems(ui.Center)
+						itemArea.Children(func() {
+							iconColor := t.TextMuted
 							if isActive {
-								title.Bold().TextColor(t.Accent)
+								iconColor = t.Accent
 							}
-							metaText := fmt.Sprintf("%s · %s", formatRelativeTime(it.ModTime), formatBytes(it.Size))
-							ui.Text(c, metaText).FontSize(11).TextColor(t.TextMuted).SingleLine()
+							ui.Icon(c, icon("pencil")).Size(16, 16).TextColor(iconColor)
+
+							col := ui.Column(c.Key("meta")).Grow(1).Gap(2).Justify(ui.Center)
+							col.Children(func() {
+								title := ui.Text(c, it.Name).FontSize(13).SingleLine()
+								if isActive {
+									title.Bold().TextColor(t.Accent)
+								}
+								metaText := fmt.Sprintf("%s · %s", formatRelativeTime(it.ModTime), formatBytes(it.Size))
+								ui.Text(c, metaText).FontSize(11).TextColor(t.TextMuted).SingleLine()
+							})
 						})
-						col.OnClick(func() {
+						itemArea.OnClick(func() {
 							if !isActive {
 								a.SaveCurrent()
 								a.OpenDrawing(it.Path)
