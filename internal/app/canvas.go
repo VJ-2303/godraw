@@ -25,10 +25,8 @@ type scene struct {
 	// lightInk draws hand-inked strokes as lines rather than filled masks:
 	// see atlasBudget.
 	lightInk bool
-	only     []doc.ID // what an export draws; all of the page without it
 	path     ui.Path
 	segment  [2][2]float32
-	transp   bool
 }
 
 func toUI(c editor.Color) ui.Color {

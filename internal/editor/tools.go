@@ -1889,9 +1889,8 @@ func (g *linePointDrag) cancel(e *Editor) { e.rollback() }
 // --- freehand ---
 
 type freehand struct {
-	id       doc.ID
-	last     geo.Vec
-	straight bool
+	id   doc.ID
+	last geo.Vec
 }
 
 func newFreehand(e *Editor) *freehand {

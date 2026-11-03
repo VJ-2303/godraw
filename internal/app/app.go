@@ -47,22 +47,19 @@ type App struct {
 	opacity      float64 // bound to the opacity slider
 	opacityLive  bool
 
-	geoOpen, pagesOpen, menuOpen, helpOpen, moreOpen bool
-	headsOpen                                        bool
-	minimap                                          bool
-	renamingPage                                     doc.ID
-	renameText                                       string
-	editKey                                          int
-	lastEditing                                      doc.ID
+	geoOpen, pagesOpen, helpOpen bool
+	minimap                      bool
+	renamingPage                 doc.ID
+	renameText                   string
+	editKey                      int
+	lastEditing                  doc.ID
 
 	services ui.Services
 	hasSvc   bool
-	toast    string
 
 	bitmaps map[doc.ID]*ui.Bitmap
 	decoded map[doc.ID]string
 	pending map[doc.ID]bool
-	dark    bool
 
 	sizeBadge bool
 }
