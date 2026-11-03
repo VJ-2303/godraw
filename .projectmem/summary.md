@@ -6,7 +6,7 @@ _Last updated: 2026-11-03_
 A local, native whiteboard in the manner of [tldraw](https://github.com/tldraw/tldraw), written in Go and drawn with [MyGo](https://github.com/egoist/mygo)'s native UI: no web view, no JavaScript. It reads and writes tldraw's `.tldr` files.
 
 ## Recent issues
-- No issues logged yet.
+- [DONE] #0001 panic: mygo: NewWindow called before the application is ready; create windows in App.WhenReady [main.go:36] -> Instantiate window inside mygo.App.WhenReady callback [main.go:37] (fixed)
 
 ## Decisions
 - Removed examples directory and showcase demo code
