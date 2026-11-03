@@ -7,7 +7,17 @@ view, no JavaScript. It reads and writes tldraw's `.tldr` files.
 godraw is an independent reimplementation. It contains no tldraw code and isn't
 affiliated with tldraw, Inc.
 
-## Run
+![The godraw home screen](docs/screenshots/home.png)
+
+## Why godraw
+
+Most whiteboard apps are a browser engine with a whiteboard inside. godraw is a single
+static binary that draws with the GPU directly. It starts instantly, and your drawings
+are plain files on your own disk — no account, no cloud, works fully offline.
+
+## Getting started
+
+Requires [Go](https://go.dev) 1.27 or newer on Linux.
 
 ```sh
 go run .                    # a new drawing
@@ -15,6 +25,9 @@ go run . drawing.tldr       # open a file
 go tool mygo build          # package build/linux/godraw
 go test ./...
 ```
+
+Drawings live in `~/Documents/godraw`. The home screen lists them: search, rename,
+delete, or start a new one.
 
 ## What it does
 
@@ -35,12 +48,33 @@ distribute, copy and paste, undo and redo, and multiple pages.
 - Lines with draggable vertices and curves
 - Frames that clip and hold their contents
 
-**Documents.** MyGo's document system gives each drawing its own window, plus autosave,
-crash recovery, Open Recent, and pick-up of changes made to the file by other apps.
+**Documents.** Each drawing opens in its own window. Autosave and crash recovery are built
+in, recent files are one click away, and godraw picks up changes other apps make to a file
+you have open.
 
-**Export.** PNG and SVG, of the selection or the page.
+**Import and export.** Paste images from the clipboard, drop files onto the window, and
+export the selection or the whole page as PNG (at 2× resolution) or SVG.
 
 **View.** Pan, zoom and pinch, zoom to fit, minimap, dark mode, focus mode.
+
+## Performance
+
+godraw stays fast by doing less work, not by caching harder:
+
+- **No browser engine.** The UI is drawn by native GPU rendering through MyGo. There is no
+  DOM, no JavaScript, and no web view process — startup is immediate and memory use stays
+  low.
+- **Culling.** Each frame computes a culling box per shape from cached page bounds, and
+  only shapes that intersect the viewport are drawn. Zoomed into a corner of a huge board,
+  everything off screen costs nothing.
+- **Cached display lists.** Each shape's display list is built once and reused across
+  moves and zooms.
+- **Cheap ordering.** Shapes and pages are ordered by fractional indices — the same scheme
+  `.tldr` files use — so reordering never renumbers anything, and undo holds the records
+  themselves.
+- **Tiled export.** PNG export renders large pages in tiles with per-tile mask atlases and
+  stitches them, so pages far larger than the screen or a single GPU texture still export,
+  capped at 8192 px per side.
 
 ## Compatibility with tldraw
 
