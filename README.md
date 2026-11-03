@@ -17,7 +17,17 @@ are plain files on your own disk — no account, no cloud, works fully offline.
 
 ## Getting started
 
-Requires [Go](https://go.dev) 1.27 or newer on Linux.
+Install from a release, no root needed:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/VJ-2303/godraw/main/install.sh | sh
+```
+
+Or grab a tarball, `.deb` or `PKGBUILD` from
+[Releases](https://github.com/VJ-2303/godraw/releases). Uninstall with
+`install.sh --uninstall`.
+
+To build from source, requires [Go](https://go.dev) 1.27 or newer on Linux.
 
 ```sh
 go run .                    # a new drawing

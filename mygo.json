@@ -1,9 +1,14 @@
 {
   "name": "godraw",
-  "identifier": "com.example.godraw",
+  "identifier": "io.github.vj-2303.godraw",
   "version": "0.1.0",
   "out": "build",
   "fileAssociations": [
     { "ext": ["tldr"], "name": "tldraw Drawing", "mimeType": "application/vnd.tldraw+json" }
-  ]
+  ],
+  "linux": {
+    "webview": false,
+    "comment": "A local, native whiteboard",
+    "categories": ["Graphics", "Utility"]
+  }
 }
