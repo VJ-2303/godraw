@@ -11,7 +11,6 @@
 _Loose thoughts, not yet committed to._
 
 ## Active plans
-_What we're working toward now. Use `- [ ]` / `- [x]` checklists._
 
 ## Next
 _Queued, but not started._
@@ -20,3 +19,10 @@ _Queued, but not started._
 
 ## Shipped
 _Move completed plans here so the top stays about the future._
+- [x] Implement central library storage manager in `~/Documents/godraw/`
+- [x] Create Home Page Gallery view in `internal/app/` (grid of cards, thumbnail preview, "+ New Drawing" button)
+- [x] Add "+ New Drawing" modal prompt for file name before canvas creation
+- [x] Add card actions for Rename and Delete (with confirmation modal)
+- [x] Wire single-window view router in `App` (`ViewHome` ⇄ `ViewCanvas`) with "← Home" button
+- [x] Auto-generate/cache thumbnails on drawing save
+- [x] Handle CLI arguments by importing external `.tldr` files into `~/Documents/godraw/`

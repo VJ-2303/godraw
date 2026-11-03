@@ -30,10 +30,6 @@ type testHost struct {
 
 func (h *testHost) Changed(d *doc.Drawing) { h.saved = append(h.saved, d) }
 func (h *testHost) Window() *mygo.Window   { return nil }
-func (h *testHost) New()                   {}
-func (h *testHost) Open()                  {}
-func (h *testHost) Save()                  {}
-func (h *testHost) SaveAs()                {}
 
 func (h *testHost) Update(fn func()) {
 	h.mu.Lock()

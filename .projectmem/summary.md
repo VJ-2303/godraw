@@ -14,6 +14,7 @@ A local, native whiteboard in the manner of [tldraw](https://github.com/tldraw/t
 - Enabled Frameless: true for seamless tiling in Hyprland and edge-to-edge canvas
 - Removed in-window GTK menubar on Linux/Windows and added New/Open/Save to in-app More menu and shortcuts
 - Removed all macOS/Windows-specific menu structures, DMG references, and Windows syso artifacts for Linux-only target
+- Centralize drawings in ~/Documents/godraw with native home gallery screen and remove canvas file-handling menus
 
 ## Notes
 - init

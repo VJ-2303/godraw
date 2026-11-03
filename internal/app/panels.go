@@ -403,7 +403,14 @@ func (a *App) headRow(c *ui.Context, label string, prop editor.StyleProp, cur st
 func (a *App) topLeft(c *ui.Context) {
 	e := a.ed
 	t := c.Theme()
-	panelStyle(c, ui.Row(c.Key("topleft"))).Absolute().Top(12).Left(12).Padding(4).Gap(2).AlignItems(ui.Center).Children(func() {
+	panelStyle(c, ui.Row(c.Key("topleft"))).Absolute().Top(12).Left(12).Padding(4).Gap(3).AlignItems(ui.Center).Children(func() {
+		homeBtn := iconButton(c, "home-btn", "arrow-left", "Home", false)
+		homeBtn.OnClick(func() {
+			a.SaveCurrent()
+			a.GoHome()
+		})
+		ui.Box(c).Size(1, 22).Margin(0, 2).Background(t.Border.Alpha(0.6))
+
 		page := e.Doc.Page(e.Page)
 		name := "Page"
 		if page != nil {
@@ -449,19 +456,6 @@ func (a *App) topLeft(c *ui.Context) {
 // moreMenu is the menu of what else there is to do.
 func (a *App) moreMenu(m *ui.Menu) {
 	e := a.ed
-	if m.Item("New").Shortcut(ui.Cmd, ui.KeyN).Chosen() {
-		a.host.New()
-	}
-	if m.Item("Open…").Shortcut(ui.Cmd, ui.KeyO).Chosen() {
-		a.host.Open()
-	}
-	if m.Item("Save").Shortcut(ui.Cmd, ui.KeyS).Chosen() {
-		a.host.Save()
-	}
-	if m.Item("Save As…").Shortcut(ui.Cmd|ui.Shift, ui.KeyS).Chosen() {
-		a.host.SaveAs()
-	}
-	m.Separator()
 	if m.Item("Export as PNG…").Chosen() {
 		a.ExportPNG()
 	}

@@ -32,14 +32,29 @@ type Host interface {
 	Update(fn func())
 	// Window returns the window, nil in tests.
 	Window() *mygo.Window
-	New()
-	Open()
-	Save()
-	SaveAs()
 }
 
 // App is one window's state.
 type App struct {
+	mode Mode
+	win  *mygo.Window
+	dir  string
+
+	drawings     []*DrawingItem
+	searchQuery  string
+	gridState    ui.GridState
+	newModal     bool
+	newName      string
+	renameModal  bool
+	renameTarget *DrawingItem
+	renameName   string
+	deleteModal  bool
+	deleteTarget *DrawingItem
+
+	currentPath string
+	currentName string
+	dirty       bool
+
 	ed   *editor.Editor
 	host Host
 	meas *measurer
@@ -72,13 +87,36 @@ type App struct {
 func New(d *doc.Drawing, host Host) *App {
 	m := newMeasurer()
 	a := &App{
+		mode: ModeCanvas,
 		meas: m, host: host, t0: time.Now(),
 		bitmaps: map[doc.ID]*ui.Bitmap{}, decoded: map[doc.ID]string{}, pending: map[doc.ID]bool{},
 		minimap: false, sizeBadge: true,
 	}
 	a.ed = editor.New(d, m.measure)
-	a.ed.OnChange = host.Changed
+	a.ed.OnChange = func(doc *doc.Drawing) {
+		if a.host != nil {
+			a.host.Changed(doc)
+		}
+		a.dirty = true
+	}
 	return a
+}
+
+func (a *App) runUpdate(fn func()) {
+	if a.host != nil {
+		a.host.Update(fn)
+	} else if a.win != nil {
+		a.win.Update(fn)
+	} else {
+		fn()
+	}
+}
+
+func (a *App) getWindow() *mygo.Window {
+	if a.host != nil {
+		return a.host.Window()
+	}
+	return a.win
 }
 
 // Editor returns the window's editor.
@@ -107,7 +145,7 @@ func (a *App) decodeAssets() {
 		src := asset.Src
 		go func() {
 			b := decodeDataURL(src)
-			a.host.Update(func() {
+			a.runUpdate(func() {
 				delete(a.pending, id)
 				a.decoded[id] = src
 				if b != nil {
@@ -136,10 +174,19 @@ func decodeDataURL(src string) *ui.Bitmap {
 
 // View builds the window.
 func (a *App) View(c *ui.Context) {
-	e := a.ed
 	a.services = c.Services()
 	a.hasSvc = true
 	a.applyTheme(c)
+
+	if a.mode == ModeHome {
+		a.homeView(c)
+		return
+	}
+	a.canvasView(c)
+}
+
+func (a *App) canvasView(c *ui.Context) {
+	e := a.ed
 	// The camera works in the size the canvas had last.
 	if b := a.canvasHandle.Bounds(c); b.W > 0 {
 		e.VW, e.VH = float64(b.W), float64(b.H)
@@ -413,14 +460,14 @@ func (a *App) dropFiles(files []string, at geo.Vec) {
 			p := at.Add(geo.V(offset, offset))
 			offset += 24
 			name := filepath.Base(path)
-			a.host.Update(func() { a.insertImageData(name, mime, data, &p) })
+			a.runUpdate(func() { a.insertImageData(name, mime, data, &p) })
 		}
 	}()
 }
 
 // InsertImageFromDialog asks for images, and adds them.
 func (a *App) InsertImageFromDialog() {
-	win := a.host.Window()
+	win := a.getWindow()
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 			Parent: win, Title: "Insert Image", Filters: []mygo.FileFilter{{Name: "Images", Extensions: []string{"png", "jpg", "jpeg", "gif"}}},
@@ -428,6 +475,6 @@ func (a *App) InsertImageFromDialog() {
 		if err != nil || len(paths) == 0 {
 			return
 		}
-		a.host.Update(func() { a.dropFiles(paths, a.ed.ViewBox().Center()) })
+		a.runUpdate(func() { a.dropFiles(paths, a.ed.ViewBox().Center()) })
 	}()
 }
