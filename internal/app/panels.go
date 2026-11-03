@@ -94,7 +94,7 @@ func (a *App) toolbar(c *ui.Context) {
 				tool := t.tool
 				b.OnClick(func() { e.SetTool(tool); a.refocus(c) })
 			}
-			if iconButton(c, "image", "image", "Insert image — ⌘U", false).Clicked() {
+			if iconButton(c, "image", "image", "Insert image — Ctrl+U", false).Clicked() {
 				a.InsertImageFromDialog()
 			}
 			a.geoButton(c)
@@ -423,19 +423,19 @@ func (a *App) topLeft(c *ui.Context) {
 		}
 		ui.Popover(c, b, &a.pagesOpen, func() { a.pagesMenu(c) })
 
-		undo := iconButton(c, "undo", "undo-2", "Undo — ⌘Z", false)
+		undo := iconButton(c, "undo", "undo-2", "Undo — Ctrl+Z", false)
 		if !e.CanUndo() {
 			undo.Opacity(0.35)
 		}
 		undo.OnClick(func() { e.Undo(); a.refocus(c) })
-		redo := iconButton(c, "redo", "redo-2", "Redo — ⇧⌘Z", false)
+		redo := iconButton(c, "redo", "redo-2", "Redo — Ctrl+Shift+Z", false)
 		if !e.CanRedo() {
 			redo.Opacity(0.35)
 		}
 		redo.OnClick(func() { e.Redo(); a.refocus(c) })
 		has := len(e.Selection()) > 0
-		del := iconButton(c, "delete", "trash-2", "Delete — ⌫", false)
-		dup := iconButton(c, "duplicate", "copy", "Duplicate — ⌘D", false)
+		del := iconButton(c, "delete", "trash-2", "Delete — Backspace", false)
+		dup := iconButton(c, "duplicate", "copy", "Duplicate — Ctrl+D", false)
 		if !has {
 			del.Opacity(0.35)
 			dup.Opacity(0.35)
@@ -449,6 +449,19 @@ func (a *App) topLeft(c *ui.Context) {
 // moreMenu is the menu of what else there is to do.
 func (a *App) moreMenu(m *ui.Menu) {
 	e := a.ed
+	if m.Item("New").Shortcut(ui.Cmd, ui.KeyN).Chosen() {
+		a.host.New()
+	}
+	if m.Item("Open…").Shortcut(ui.Cmd, ui.KeyO).Chosen() {
+		a.host.Open()
+	}
+	if m.Item("Save").Shortcut(ui.Cmd, ui.KeyS).Chosen() {
+		a.host.Save()
+	}
+	if m.Item("Save As…").Shortcut(ui.Cmd|ui.Shift, ui.KeyS).Chosen() {
+		a.host.SaveAs()
+	}
+	m.Separator()
 	if m.Item("Export as PNG…").Chosen() {
 		a.ExportPNG()
 	}
@@ -558,8 +571,8 @@ func (a *App) zoomPanel(c *ui.Context) {
 				a.minimap = !a.minimap
 				a.refocus(c)
 			}
-			iconButton(c, "zoom-out", "minus", "Zoom out — ⌘-", false).OnClick(func() { e.ZoomOut(); a.refocus(c) })
-			b := ui.ButtonBase(c.Key("zoom-reset")).Width(52).Height(34).Radius(7).Center().Label("Zoom").Tooltip("Reset zoom — ⇧0 · Double click to fit")
+			iconButton(c, "zoom-out", "minus", "Zoom out — Ctrl+-", false).OnClick(func() { e.ZoomOut(); a.refocus(c) })
+			b := ui.ButtonBase(c.Key("zoom-reset")).Width(52).Height(34).Radius(7).Center().Label("Zoom").Tooltip("Reset zoom — Shift+0 · Double click to fit")
 			if b.Hovered() {
 				b.Background(t.SurfaceHover)
 			}
@@ -569,8 +582,8 @@ func (a *App) zoomPanel(c *ui.Context) {
 			} else if b.Clicked() {
 				e.ResetZoom()
 			}
-			iconButton(c, "zoom-in", "plus", "Zoom in — ⌘=", false).OnClick(func() { e.ZoomIn(); a.refocus(c) })
-			iconButton(c, "zoom-fit", "maximize", "Zoom to fit — ⇧1", false).OnClick(func() { e.ZoomToFit(); a.refocus(c) })
+			iconButton(c, "zoom-in", "plus", "Zoom in — Ctrl+=", false).OnClick(func() { e.ZoomIn(); a.refocus(c) })
+			iconButton(c, "zoom-fit", "maximize", "Zoom to fit — Shift+1", false).OnClick(func() { e.ZoomToFit(); a.refocus(c) })
 			iconButton(c, "help", "circle-help", "Keyboard shortcuts — ?", false).OnClick(func() { a.helpOpen = true })
 		})
 	})
@@ -634,23 +647,23 @@ func (a *App) helpDialog(c *ui.Context) {
 		ui.Text(c, "Keyboard shortcuts").FontSize(16).Bold()
 		ui.Grid(c).ColumnTracks(ui.Fixed(290), ui.Fixed(290)).GapX(24).GapY(4).Children(func() {
 			for _, g := range [][2]string{
-				{"V", "Select"}, {"⇧1", "Zoom to fit"},
-				{"H, or hold Space", "Hand"}, {"⇧2", "Zoom to selection"},
-				{"D", "Draw"}, {"⇧0", "Zoom to 100%"},
-				{"⇧D", "Highlighter"}, {"⌘= / ⌘-", "Zoom in / out"},
-				{"E", "Eraser"}, {"⌘' / ⌘.", "Grid / focus mode"},
-				{"A", "Arrow"}, {"⌘/", "Dark mode"},
-				{"T", "Text"}, {"⌘G / ⇧⌘G", "Group / ungroup"},
-				{"N", "Note"}, {"⇧L", "Lock"},
-				{"R / O", "Rectangle / ellipse"}, {"⌘D", "Duplicate"},
+				{"V", "Select"}, {"Shift+1", "Zoom to fit"},
+				{"H, or hold Space", "Hand"}, {"Shift+2", "Zoom to selection"},
+				{"D", "Draw"}, {"Shift+0", "Zoom to 100%"},
+				{"Shift+D", "Highlighter"}, {"Ctrl+= / Ctrl+-", "Zoom in / out"},
+				{"E", "Eraser"}, {"Ctrl+' / Ctrl+.", "Grid / focus mode"},
+				{"A", "Arrow"}, {"Ctrl+/", "Dark mode"},
+				{"T", "Text"}, {"Ctrl+G / Ctrl+Shift+G", "Group / ungroup"},
+				{"N", "Note"}, {"Shift+L", "Lock"},
+				{"R / O", "Rectangle / ellipse"}, {"Ctrl+D", "Duplicate"},
 				{"L", "Line"}, {"[ / ]", "Send backward / bring forward"},
-				{"F", "Frame"}, {"⌘[ / ⌘]", "Send to back / bring to front"},
-				{"K", "Laser"}, {"⌥A ⌥H ⌥D", "Align left / center / right"},
-				{"Q", "Keep tool selected"}, {"⌥W ⌥V ⌥S", "Align top / middle / bottom"},
-				{"⌘U", "Insert image"}, {"⇧H / ⇧V", "Flip"},
-				{"Enter", "Edit text"}, {"Arrows", "Nudge (⇧ for 10)"},
-				{"Shift while dragging", "Keep proportions, 15° steps"}, {"⌘ while dragging", "Snap, or free an arrow"},
-				{"⌥ while dragging", "Copy, or resize from the center"}, {"⌘ with a brush", "Select only what is wrapped"},
+				{"F", "Frame"}, {"Ctrl+[ / Ctrl+]", "Send to back / bring to front"},
+				{"K", "Laser"}, {"Alt+A Alt+H Alt+D", "Align left / center / right"},
+				{"Q", "Keep tool selected"}, {"Alt+W Alt+V Alt+S", "Align top / middle / bottom"},
+				{"Ctrl+U", "Insert image"}, {"Shift+H / Shift+V", "Flip"},
+				{"Enter", "Edit text"}, {"Arrows", "Nudge (Shift for 10)"},
+				{"Shift while dragging", "Keep proportions, 15° steps"}, {"Ctrl while dragging", "Snap, or free an arrow"},
+				{"Alt while dragging", "Copy, or resize from the center"}, {"Ctrl with a brush", "Select only what is wrapped"},
 			} {
 				ui.Row(c).Gap(8).Children(func() {
 					ui.Text(c, g[0]).Width(130).TextColor(c.Theme().TextMuted).FontSize(12)

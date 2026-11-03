@@ -33,71 +33,47 @@ func (w *window) Update(fn func()) {
 
 func (w *window) Window() *mygo.Window { return w.win }
 
+func (w *window) New() {
+	if docs != nil {
+		go docs.New()
+	}
+}
+
+func (w *window) Open() {
+	go func() {
+		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
+			Parent:  w.win,
+			Filters: []mygo.FileFilter{{Name: "tldraw Drawing", Extensions: []string{"tldr"}}},
+		})
+		if err == nil && len(paths) > 0 {
+			for _, p := range paths {
+				go openDrawing(p)
+			}
+		}
+	}()
+}
+
+func (w *window) Save() {
+	go func() {
+		if err := w.doc.Save(); err != nil {
+			log.Printf("godraw: save: %v", err)
+		}
+	}()
+}
+
+func (w *window) SaveAs() {
+	go func() {
+		if err := w.doc.SaveAs(""); err != nil {
+			log.Printf("godraw: save as: %v", err)
+		}
+	}()
+}
+
+// docs holds all open drawings.
+var docs *mygo.Documents[*doc.Drawing]
+
 // openDrawing opens a drawing in a window of its own, off the main thread.
 var openDrawing func(path string)
-
-// windows finds the state of a window, for the menus.
-var windows = map[*mygo.Window]*window{}
-
-// focused returns the state of the window a menu acts on.
-func focused(win *mygo.Window) *window {
-	if w := windows[win]; w != nil {
-		return w
-	}
-	for _, w := range windows {
-		if w.win.IsFocused() {
-			return w
-		}
-	}
-	return nil
-}
-
-// act makes a menu item's click run on the window it applies to, and draw.
-func act(fn func(a *app.App)) func(*mygo.MenuItem, *mygo.Window) {
-	return func(_ *mygo.MenuItem, win *mygo.Window) {
-		if w := focused(win); w != nil {
-			w.win.Update(func() { fn(w.app) })
-		}
-	}
-}
-
-func menu() *mygo.Menu {
-	return mygo.NewMenu([]*mygo.MenuItem{
-		{Role: mygo.RoleAppMenu},
-		{Label: "File", Submenu: []*mygo.MenuItem{
-			{Role: mygo.RoleNew},
-			{Role: mygo.RoleOpen},
-			{Role: mygo.RoleOpenRecent},
-			mygo.Separator(),
-			{Role: mygo.RoleClose},
-			{Role: mygo.RoleSave},
-			{Role: mygo.RoleSaveAs},
-			{Role: mygo.RoleDuplicate},
-			{Role: mygo.RoleRename},
-			{Role: mygo.RoleRevert},
-			mygo.Separator(),
-			{Label: "Insert Image…", Accelerator: "CmdOrCtrl+U", Click: act(func(a *app.App) { a.InsertImageFromDialog() })},
-			{Label: "Export as PNG…", Accelerator: "CmdOrCtrl+Shift+E", Click: act(func(a *app.App) { a.ExportPNG() })},
-			{Label: "Export as SVG…", Click: act(func(a *app.App) { a.ExportSVG() })},
-			{Label: "Copy as PNG", Accelerator: "CmdOrCtrl+Shift+C", Click: act(func(a *app.App) { a.CopyPNG() })},
-		}},
-		{Role: mygo.RoleEditMenu},
-		{Label: "View", Submenu: []*mygo.MenuItem{
-			{Label: "Zoom In", Click: act(func(a *app.App) { a.Editor().ZoomIn() })},
-			{Label: "Zoom Out", Click: act(func(a *app.App) { a.Editor().ZoomOut() })},
-			{Label: "Zoom to 100%", Click: act(func(a *app.App) { a.Editor().ResetZoom() })},
-			{Label: "Zoom to Fit", Click: act(func(a *app.App) { a.Editor().ZoomToFit() })},
-			{Label: "Zoom to Selection", Click: act(func(a *app.App) { a.Editor().ZoomToSelection() })},
-			mygo.Separator(),
-			{Label: "Toggle Grid", Click: act(func(a *app.App) { e := a.Editor(); e.Grid = !e.Grid })},
-			{Label: "Toggle Focus Mode", Click: act(func(a *app.App) { e := a.Editor(); e.FocusMode = !e.FocusMode })},
-			{Label: "Toggle Dark Mode", Click: act(func(a *app.App) { a.ToggleDark() })},
-			mygo.Separator(),
-			{Role: mygo.RoleToggleFullScreen},
-		}},
-		{Role: mygo.RoleWindowMenu},
-	})
-}
 
 // fileArgs returns the drawings named on the command line. MyGo opens them
 // itself in apps the mygo CLI built; this covers go run and go build too, and
@@ -122,7 +98,6 @@ func isDrawing(path string) bool { return strings.EqualFold(filepath.Ext(path), 
 
 func main() {
 	files := fileArgs()
-	var docs *mygo.Documents[*doc.Drawing]
 	openDrawing = func(path string) {
 		if _, err := docs.Open(path); err != nil {
 			log.Printf("godraw: %s: %v", path, err)
@@ -143,11 +118,11 @@ func main() {
 			w.app = app.New(d.Content().Snapshot(), w)
 			w.win = mygo.NewWindow(mygo.WindowOptions{
 				Width: 1280, Height: 820, MinWidth: 640, MinHeight: 420,
-				StateKey: "drawing",
-				Content:  ui.View(w.app.View),
+				StateKey:  "drawing",
+				Frameless: true,
+				Content:   ui.View(w.app.View),
 			})
-			windows[w.win] = w
-			w.win.OnClosed(func() { delete(windows, w.win) })
+			w.win.SetMenu(mygo.NewMenu(nil))
 			// Dropped drawings open; dropped images land where they fall.
 			w.win.OnFileDrop(func(e *mygo.FileDropEvent) {
 				var images []string
@@ -168,7 +143,7 @@ func main() {
 		},
 	})
 	mygo.App.WhenReady(func() {
-		mygo.App.SetMenu(menu())
+		mygo.App.SetMenu(nil)
 		if len(files) == 0 {
 			return
 		}

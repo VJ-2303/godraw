@@ -32,6 +32,10 @@ type Host interface {
 	Update(fn func())
 	// Window returns the window, nil in tests.
 	Window() *mygo.Window
+	New()
+	Open()
+	Save()
+	SaveAs()
 }
 
 // App is one window's state.

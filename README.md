@@ -12,7 +12,7 @@ affiliated with tldraw, Inc.
 ```sh
 go run .                    # a new drawing
 go run . drawing.tldr       # open a file
-go tool mygo build          # package build/<platform>/godraw.app and a .dmg
+go tool mygo build          # package build/linux/godraw
 go test ./...
 ```
 
@@ -22,7 +22,7 @@ go test ./...
 frame, and 20 geo shapes. Keep a tool selected with `Q`. Press `?` for every shortcut.
 
 **Editing.** Multiple selection and brush selection, move, resize, rotate, flip, duplicate,
-alt-drag to copy, snapping (hold `⌘`), grid, group and ungroup, lock, reorder, align and
+alt-drag to copy, snapping (hold `Ctrl`), grid, group and ungroup, lock, reorder, align and
 distribute, copy and paste, undo and redo, and multiple pages.
 
 **Shapes.**

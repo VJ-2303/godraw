@@ -57,6 +57,18 @@ func (a *App) shortcuts(c *ui.Context) {
 	if c.Shortcut(cmd, ui.KeyU) {
 		a.InsertImageFromDialog()
 	}
+	if c.Shortcut(cmd, ui.KeyS) {
+		a.host.Save()
+	}
+	if c.Shortcut(cmd|shift, ui.KeyS) {
+		a.host.SaveAs()
+	}
+	if c.Shortcut(cmd, ui.KeyO) {
+		a.host.Open()
+	}
+	if c.Shortcut(cmd, ui.KeyN) {
+		a.host.New()
+	}
 
 	// Editing.
 	if c.Shortcut(cmd, ui.KeyZ) {

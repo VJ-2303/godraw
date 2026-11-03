@@ -1,6 +1,5 @@
 /build/
 /.mygo/
-mygo_windows_*.syso
 
 .projectmem/events.jsonl
 .projectmem/watch.pid
