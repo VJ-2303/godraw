@@ -75,17 +75,17 @@ func sw(solid, semi, pattern, fill, lined, noteFill, noteText, frameStroke, fram
 
 // Light is the light theme.
 var Light = &Palette{
-	Text:       Hex("#000000"),
+	Text:       Hex("#1d1d1d"),
 	Background: Hex("#f9fafb"),
 	Solid:      Hex("#fcfffe"),
 	Cursor:     Hex("#000000"),
 	Snap:       Hex("#e64a4a"),
-	Selection:  Hex("#2f80ed"),
+	Selection:  Hex("#2563eb"),
 	SelFill:    Color{31, 143, 255, 0.24},
 	BrushFill:  Color{143, 143, 143, 0.102},
 	BrushLine:  Color{143, 143, 143, 0.251},
 	Laser:      Hex("#ff0000"),
-	Grid:       Hex("#bcc1c7"),
+	Grid:       Hex("#1d1d1d").Alpha(0.14),
 	Swatches: map[string]Swatch{
 		"black":        sw("#1d1d1d", "#e8e8e8", "#494949", "#1d1d1d", "#363636", "#FCE19C", "#000000", "#717171", "#ffffff", "#000000", "#fddd00"),
 		"blue":         sw("#4465e9", "#dce1f8", "#6681ee", "#4465e9", "#6580ec", "#8AA3FF", "#000000", "#6681ec", "#f9fafe", "#000000", "#10acff"),
