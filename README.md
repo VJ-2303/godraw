@@ -7,7 +7,7 @@ view, no JavaScript. It reads and writes tldraw's `.tldr` files.
 godraw is an independent reimplementation. It contains no tldraw code and isn't
 affiliated with tldraw, Inc.
 
-![The godraw home screen](docs/screenshots/home.png)
+![godraw, drawing a hero board](docs/screenshots/demo.png)
 
 ## Why godraw
 
