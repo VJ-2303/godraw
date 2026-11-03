@@ -409,6 +409,9 @@ func (a *App) topLeft(c *ui.Context) {
 			a.SaveCurrent()
 			a.GoHome()
 		})
+		if a.currentName != "" {
+			ui.Text(c, a.currentName).FontSize(13).Bold().Margin(0, 4)
+		}
 		ui.Box(c).Size(1, 22).Margin(0, 2).Background(t.Border.Alpha(0.6))
 
 		page := e.Doc.Page(e.Page)

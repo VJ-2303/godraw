@@ -179,6 +179,7 @@ func (a *App) View(c *ui.Context) {
 	a.applyTheme(c)
 
 	if a.mode == ModeHome {
+		a.homeShortcuts(c)
 		a.homeView(c)
 		return
 	}
