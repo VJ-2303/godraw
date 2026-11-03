@@ -19,9 +19,11 @@ type scene struct {
 	p      *ui.Painter
 	pal    *editor.Palette
 	cam    editor.Camera
-	origin geo.Vec
-	view   geo.Box // what the camera shows, in the page
-	export bool
+	origin     geo.Vec
+	view       geo.Box // what the camera shows, in the page
+	viewPad    geo.Box
+	viewInkPad geo.Box
+	export     bool
 	// lightInk draws hand-inked strokes as lines rather than filled masks:
 	// see atlasBudget.
 	lightInk bool
@@ -71,6 +73,9 @@ func (a *App) paintCanvas(p *ui.Painter, r ui.Rect) {
 	cam := e.Cam()
 	s := &scene{a: a, e: e, p: p, pal: e.Palette(), cam: cam, origin: geo.V(float64(r.X), float64(r.Y))}
 	s.view = geo.Box{X: -cam.X, Y: -cam.Y, W: float64(r.W) / cam.Z, H: float64(r.H) / cam.Z}
+	pad := 40.0 / cam.Z
+	s.viewPad = s.view.Expand(pad)
+	s.viewInkPad = s.view.Expand(pad + 60)
 	p.Fill(r, toUI(s.pal.Background), 0)
 	if e.Grid {
 		s.grid(r)
@@ -96,6 +101,9 @@ func (s *scene) maskArea(parent doc.ID) float64 {
 		sh := s.e.Doc.Shapes[id]
 		if sh.Type == doc.TypeGroup || sh.Type == doc.TypeFrame {
 			area += s.maskArea(id)
+			if area > atlasBudget {
+				return area
+			}
 			if sh.Type == doc.TypeGroup {
 				continue
 			}
@@ -103,6 +111,9 @@ func (s *scene) maskArea(parent doc.ID) float64 {
 		b := s.e.PageBounds(id)
 		if s.view.Overlaps(b) {
 			area += (b.W*k + 8) * (b.H*k + 8)
+			if area > atlasBudget {
+				return area
+			}
 		}
 	}
 	return area
@@ -166,11 +177,10 @@ func (s *scene) layer(parent doc.ID, highlights bool) {
 
 func (s *scene) culled(sh *doc.Shape) bool {
 	b := s.e.PageBounds(sh.ID)
-	pad := 40.0 / s.cam.Z
 	if sh.Type == doc.TypeHighlight || sh.Type == doc.TypeDraw {
-		pad += 60
+		return !s.viewInkPad.Overlaps(b)
 	}
-	return !s.view.Expand(pad).Overlaps(b)
+	return !s.viewPad.Overlaps(b)
 }
 
 func (s *scene) opacityOf(sh *doc.Shape) float64 {

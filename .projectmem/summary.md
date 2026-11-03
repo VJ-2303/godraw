@@ -17,6 +17,7 @@ A local, native whiteboard in the manner of [tldraw](https://github.com/tldraw/t
 - Removed all macOS/Windows-specific menu structures, DMG references, and Windows syso artifacts for Linux-only target
 - Centralize drawings in ~/Documents/godraw with native home gallery screen and remove canvas file-handling menus
 - Use centered dialog overlay for drawings gallery instead of full-screen page
+- Cache shape pageBounds and precompute viewport culling boxes per frame
 
 ## Notes
 - init

@@ -22,9 +22,11 @@ type Geometry struct {
 
 // shapeCache is what the editor keeps on a shape, which an edit replaces.
 type shapeCache struct {
-	geom    *Geometry
-	display [2][]Prim
-	ok      [2]bool
+	geom       *Geometry
+	pageBounds geo.Box
+	hasBounds  bool
+	display    [2][]Prim
+	ok         [2]bool
 }
 
 func cacheOf(s *doc.Shape) *shapeCache {
@@ -370,7 +372,18 @@ func (e *Editor) PageBounds(id doc.ID) geo.Box {
 	if s == nil {
 		return geo.Box{}
 	}
-	return e.PageMat(id).BoundsOf(e.Geometry(s).Bounds)
+	if s.Type == doc.TypeGroup || s.Type == doc.TypeArrow {
+		return e.PageMat(id).BoundsOf(e.Geometry(s).Bounds)
+	}
+	c := cacheOf(s)
+	if c.hasBounds && doc.IsPageID(s.Parent) {
+		return c.pageBounds
+	}
+	b := e.PageMat(id).BoundsOf(e.Geometry(s).Bounds)
+	if doc.IsPageID(s.Parent) {
+		c.pageBounds, c.hasBounds = b, true
+	}
+	return b
 }
 
 // PageOutline returns a shape's outline in the page.
