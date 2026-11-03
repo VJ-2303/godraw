@@ -20,12 +20,16 @@ A local, native whiteboard in the manner of [tldraw](https://github.com/tldraw/t
 - Cache shape pageBounds and precompute viewport culling boxes per frame
 - Default to light theme instead of OS dark theme; dark theme only when explicitly set [internal/app/app.go:211]
 - Apply Option B warm paper light theme: #f8f7f4 canvas, #212124 warm ink text, 10% alpha grid dots, warm panel shadow [internal/editor/theme.go:76]
+- Refactor: refactor: remove system theme option, default to light [internal/app/app.go]
+- Refined light theme to match MyGo zinc chrome: canvas Text #1d1d1d, Selection #2563eb (unified with chrome accent), Grid alpha-based #1d1d1d @ 14%; canvas stays cool #f9fafb [internal/editor/theme.go:77]
 
 ## Notes
 - init
 - add showcase
 - [ImgBot] Optimize images (#1)
 - gotcha: go.mod and mygo v0.7.4 require go >= 1.27.3; host mise Go is 1.27.1 with GOTOOLCHAIN=local, requires GOTOOLCHAIN=auto or Go upgrade in mise
+- New feature: feat: linux release pipeline — tag-triggered build and user-local install script [install.sh]
+- New feature: feat: clean flat app icon — white stroke on accent blue [resources/icon.png]
 
 ## Key files
 - `.agents/skills/mygo-maintenance/SKILL.md`
